@@ -14,5 +14,13 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.15.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/itssBaljeet/WOA-Discord-Bot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/itssBaljeet/WOA-Discord-Bot/issues"
+  },
+  "homepage": "https://github.com/itssBaljeet/WOA-Discord-Bot#readme"
 }
