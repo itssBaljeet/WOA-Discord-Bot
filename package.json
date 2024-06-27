@@ -1,0 +1,18 @@
+{
+  "name": "woa-discord-bot",
+  "version": "1.0.0",
+  "description": "Ranking bot for HEMA school fights",
+  "main": "index.js",
+  "scripts": {
+    "test": "help"
+  },
+  "keywords": [
+    "discord",
+    "bot"
+  ],
+  "author": "Noah K. Harris",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.15.3"
+  }
+}
