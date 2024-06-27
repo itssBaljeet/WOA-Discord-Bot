@@ -38,6 +38,14 @@ module.exports = {
         fightDate: new Date(),
       });
 
+      if (winner.id === fighter1.id) {
+        await fighter1.increment('wins');
+        await fighter2.increment('losses');
+      } else {
+        await fighter1.increment('losses');
+        await fighter2.increment('wins');
+      }
+
       await fight.destroy();
       interaction.reply(`Fight ID ${fightId} has ended. Winner: ${winner.name}`);
     } catch (error) {

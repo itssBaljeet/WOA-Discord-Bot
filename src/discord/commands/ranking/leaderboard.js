@@ -14,7 +14,7 @@ module.exports = {
 
       let leaderboard = 'Leaderboard:\n';
       fighters.forEach((fighter, index) => {
-        leaderboard += `${index + 1}. ${fighter.name} (Rank: ${fighter.rank})\n`;
+        leaderboard += `${index + 1}. ${fighter.name} (Rank: ${fighter.rank}, Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
       });
 
       interaction.reply(leaderboard);
