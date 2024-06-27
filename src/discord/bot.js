@@ -1,6 +1,7 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
+const { sequelize, Fighter, Fight, Admin } = require('../../models')
 
 const configPath = path.join(__dirname, '../../extraResources/config.json');
 // const configPath = path.join(process.resourcesPath, 'config.json');
@@ -15,6 +16,8 @@ const client = new Client({
 
   ],
 });
+
+sequelize.sync();
 
 client.commands = new Collection();
 

@@ -4,7 +4,8 @@ const fs = require('fs')
 
 bot.startBot();
 
-const eventsPath = path.join(__dirname, '../discord/events');
+bot.client.on('ready', () => {
+  const eventsPath = path.join(__dirname, '../discord/events');
   const eventFiles = fs.readdirSync(eventsPath).filter(file => file.endsWith('.js'));
   
   for (const file of eventFiles) {
@@ -17,3 +18,5 @@ const eventsPath = path.join(__dirname, '../discord/events');
       bot.client.on(event.name, (...args) => event.execute(...args));
     }
   }
+})
+
