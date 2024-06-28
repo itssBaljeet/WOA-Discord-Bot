@@ -13,7 +13,10 @@ const Fighter = sequelize.define('Fighter', {
     primaryKey: true,
   },
   name: DataTypes.STRING,
-  rank: DataTypes.INTEGER,
+  rank: {
+    type: DataTypes.INTEGER,
+    defaultValue: 1,
+  },
   wins: {
     type: DataTypes.INTEGER,
     defaultValue: 0,
@@ -22,6 +25,13 @@ const Fighter = sequelize.define('Fighter', {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
+}, {
+  hooks: {
+    beforeCreate: async (fighter) => {
+      const maxRank = await Fighter.max('rank') || 0;
+      fighter.rank = maxRank + 1;
+    }
+  }
 });
 
 const Fight = sequelize.define('Fight', {
@@ -33,6 +43,10 @@ const Fight = sequelize.define('Fight', {
   fighter1Id: DataTypes.STRING,
   fighter2Id: DataTypes.STRING,
   result: DataTypes.STRING,
+  status: {
+    type: DataTypes.STRING,
+    defaultValue: 'pending',
+  },
 });
 
 const PreviousFight = sequelize.define('PreviousFight', {

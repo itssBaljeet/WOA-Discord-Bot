@@ -1,5 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fight, PreviousFight, Fighter } = require('../../../../models');
+const { Op } = require('sequelize');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -31,12 +32,39 @@ module.exports = {
         return interaction.reply('Winner name does not match any fighters in the fight.');
       }
 
+      const loser = winner.id === fighter1.id ? fighter2 : fighter1;
+
       await PreviousFight.create({
         fighter1Id: fighter1.id,
         fighter2Id: fighter2.id,
         winnerId: winner.id,
         fightDate: new Date(),
       });
+
+      if (winner.rank < loser.rank) {
+        // Swap ranks
+        const winnerRank = winner.rank;
+        const loserRank = loser.rank;
+
+        await Fighter.update({ rank: loserRank }, { where: { rank: winnerRank } });
+        await Fighter.update({ rank: winnerRank }, { where: { id: loser.id } });
+      } else {
+        // Shift ranks down
+        const fightersToShift = await Fighter.findAll({
+          where: {
+            rank: {
+              [Op.between]: [winner.rank + 1, loser.rank - 1]
+            }
+          },
+          order: [['rank', 'ASC']]
+        });
+
+        for (const fighter of fightersToShift) {
+          await fighter.increment('rank', { by: 1 });
+        }
+
+        await winner.update({ rank: loser.rank });
+      }
 
       if (winner.id === fighter1.id) {
         await fighter1.increment('wins');

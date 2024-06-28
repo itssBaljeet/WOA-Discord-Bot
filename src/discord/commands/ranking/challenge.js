@@ -22,30 +22,22 @@ module.exports = {
 
     try {
       const challenger = await Fighter.findByPk(challengerId);
-      if (!challenger) {
-        return interaction.reply('You need to register first.');
+      const opponentFighter = await Fighter.findByPk(opponentId);
+
+      if (!challenger || !opponentFighter) {
+        return interaction.reply('Both you and your opponent must be registered fighters.');
       }
 
-      const opponentFighter = await Fighter.findByPk(opponentId);
-      if (!opponentFighter) {
-        return interaction.reply('The opponent is not registered.');
+      if (challenger.rank === 1) {
+        return interaction.reply('As the top-ranked fighter, you cannot challenge anyone.');
+      }
+
+      if (challenger.rank <= 3 && opponentFighter.rank !== challenger.rank - 1) {
+        return interaction.reply(`As a top 3 fighter, you can only challenge the fighter ranked immediately above you.`);
       }
 
       if (opponentFighter.rank > challenger.rank + 2) {
         return interaction.reply('You can only challenge fighters up to 2 ranks above you.');
-      }
-
-      const existingFight = await Fight.findOne({
-        where: {
-          [Op.or]: [
-            { fighter1Id: challengerId, fighter2Id: opponentId },
-            { fighter1Id: opponentId, fighter2Id: challengerId },
-          ],
-        },
-      });
-
-      if (existingFight) {
-        return interaction.reply('You already have an ongoing fight with this opponent.');
       }
 
       const ongoingFight = await Fight.findOne({
@@ -56,12 +48,16 @@ module.exports = {
             { fighter1Id: opponentId },
             { fighter2Id: opponentId },
           ],
+          status: 'pending' // Assuming 'pending' indicates an active challenge
         },
       });
 
       if (ongoingFight) {
-        return interaction.reply('Either you or your opponent is already in a fight.');
+        return interaction.reply('Either you or your opponent is already in a fight or has a pending challenge.');
       }
+
+      // Create the fight with status 'pending'
+      const fight = await Fight.create({ fighter1Id: challengerId, fighter2Id: opponentId, status: 'pending' });
 
       const row = new ActionRowBuilder()
         .addComponents(
@@ -86,18 +82,23 @@ module.exports = {
         }
 
         if (i.customId === 'accept_challenge') {
-          const fight = await Fight.create({ fighter1Id: challengerId, fighter2Id: opponentId });
+          // Update the fight status to 'accepted'
+          await fight.update({ status: 'accepted' });
           await i.update({ content: `${interaction.user.username} and ${opponent.username} are now set to fight! Fight ID: ${fight.id}`, components: [] });
           collector.stop();
         } else if (i.customId === 'deny_challenge') {
+          // Delete the fight record if the challenge is denied
+          await fight.destroy();
           await i.update({ content: `${opponent.username} has denied the challenge.`, components: [] });
           collector.stop();
         }
       });
 
-      collector.on('end', (collected, reason) => {
+      collector.on('end', async (collected, reason) => {
         if (reason === 'time') {
-          interaction.editReply({ content: 'Challenge expired.', components: [] });
+          // Delete the fight record if the challenge expires
+          await fight.destroy();
+          await interaction.editReply({ content: 'Challenge expired.', components: [] });
         }
       });
     } catch (error) {
