@@ -95,8 +95,8 @@ module.exports = {
         }
       });
 
-      collector.on('end', collected => {
-        if (collected.size === 0) {
+      collector.on('end', (collected, reason) => {
+        if (reason === 'time') {
           interaction.editReply({ content: 'Challenge expired.', components: [] });
         }
       });
