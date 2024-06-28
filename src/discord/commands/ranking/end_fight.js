@@ -1,56 +1,94 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fight, PreviousFight, Fighter } = require('../../../../models');
+const { Fighter, Fight, PreviousFight } = require('../../../../models');
+const { Op } = require('sequelize');
+const sequelize = require('sequelize');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('end_fight')
-    .setDescription('Ends a fight and records the winner')
+    .setDescription('End a fight and declare a winner')
     .addIntegerOption(option => 
       option.setName('fight_id')
         .setDescription('The ID of the fight to end')
         .setRequired(true))
-    .addStringOption(option => 
-      option.setName('winner_name')
-        .setDescription('The name of the winner')
+    .addUserOption(option => 
+      option.setName('winner')
+        .setDescription('The winner of the fight')
         .setRequired(true)),
   async execute(interaction) {
     const fightId = interaction.options.getInteger('fight_id');
-    const winnerName = interaction.options.getString('winner_name');
+    const winner = interaction.options.getUser('winner');
+    const winnerId = winner.id;
 
     try {
       const fight = await Fight.findByPk(fightId);
       if (!fight) {
-        return interaction.reply('The fight does not exist.');
+        return interaction.reply('Fight not found.');
       }
 
       const fighter1 = await Fighter.findByPk(fight.fighter1Id);
       const fighter2 = await Fighter.findByPk(fight.fighter2Id);
-      const winner = winnerName === fighter1.name ? fighter1 : winnerName === fighter2.name ? fighter2 : null;
-
-      if (!winner) {
-        return interaction.reply('Winner name does not match any fighters in the fight.');
+      
+      if (!fighter1 || !fighter2) {
+        return interaction.reply('One or both fighters not found.');
       }
 
+      let winnerFighter, loserFighter;
+
+      if (winnerId === fighter1.id) {
+        winnerFighter = fighter1;
+        loserFighter = fighter2;
+      } else if (winnerId === fighter2.id) {
+        winnerFighter = fighter2;
+        loserFighter = fighter1;
+      } else {
+        return interaction.reply('Winner must be one of the fighters in the fight.');
+      }
+
+      // Update the fight result
+      await fight.update({ result: winnerId, status: 'completed' });
+
+      // Add to previous fights
       await PreviousFight.create({
-        fighter1Id: fighter1.id,
-        fighter2Id: fighter2.id,
-        winnerId: winner.id,
+        fighter1Id: fight.fighter1Id,
+        fighter2Id: fight.fighter2Id,
+        winnerId: winnerId,
         fightDate: new Date(),
       });
 
-      if (winner.id === fighter1.id) {
-        await fighter1.increment('wins');
-        await fighter2.increment('losses');
-      } else {
-        await fighter1.increment('losses');
-        await fighter2.increment('wins');
+      // Update win/loss records
+      await winnerFighter.increment('wins');
+      await loserFighter.increment('losses');
+
+      if (winnerFighter.rank > loserFighter.rank) {
+        const winnerOriginalRank = winnerFighter.rank;
+        const loserOriginalRank = loserFighter.rank;
+
+        // Update the winner's rank to the loser's rank
+        console.log("Winner's previous rank:", winnerFighter.rank);
+        await winnerFighter.update({ rank: loserOriginalRank });
+        console.log("Winner's new rank:", winnerFighter.rank, "Winner original rank:", winnerOriginalRank);
+
+        // Shift down ranks of fighters between the loser's original rank and the winner's original rank
+        await Fighter.update(
+          { rank: sequelize.literal('rank + 1') },
+          {
+            where: {
+              rank: {
+                [Op.between]: [loserOriginalRank + 1, winnerOriginalRank],
+              },
+            },
+          }
+        );
+
+        // Update the loser's rank
+        await loserFighter.update({ rank: winnerOriginalRank });
       }
 
-      await fight.destroy();
-      interaction.reply(`Fight ID ${fightId} has ended. Winner: ${winner.name}`);
+      await interaction.reply(`Fight ended. ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
     } catch (error) {
       console.error(error);
-      interaction.reply('An error occurred while ending the fight.');
+      await interaction.reply('An error occurred while ending the fight.');
     }
   },
 };
