@@ -82,7 +82,7 @@ module.exports = {
         );
 
         // Update the loser's rank
-        await loserFighter.update({ rank: winnerOriginalRank });
+        await loserFighter.update({ rank: sequelize.literal('rank + 1') });
       }
 
       await interaction.reply(`Fight ended. ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
