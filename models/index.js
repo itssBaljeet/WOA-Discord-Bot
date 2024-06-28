@@ -14,6 +14,14 @@ const Fighter = sequelize.define('Fighter', {
   },
   name: DataTypes.STRING,
   rank: DataTypes.INTEGER,
+  wins: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
+  losses: {
+    type: DataTypes.INTEGER,
+    defaultValue: 0,
+  },
 });
 
 const Fight = sequelize.define('Fight', {
