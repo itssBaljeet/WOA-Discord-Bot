@@ -32,14 +32,13 @@ module.exports = {
         return interaction.reply('As the top-ranked fighter, you cannot challenge anyone.');
       }
 
-      if (challenger.rank <= 3 && opponentFighter.rank !== challenger.rank - 1) {
-        return interaction.reply(`As a top 3 fighter, you can only challenge the fighter ranked immediately above you.`);
+      if (opponentFighter.rank > challenger.rank + 3) {
+        return interaction.reply('You can only challenge fighters up to 3 ranks above you.');
       }
 
-      if (opponentFighter.rank > challenger.rank + 2) {
-        return interaction.reply('You can only challenge fighters up to 2 ranks above you.');
+      if (opponentFighter.rank < challenger.rank) {
+        return interaction.reply('You cannot challenge fighters that are lower ranks than you.');
       }
-
       const ongoingFight = await Fight.findOne({
         where: {
           [Op.or]: [
