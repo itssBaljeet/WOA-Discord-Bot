@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fighter, Fight, PreviousFight } = require('../../../../models');
 const { Op } = require('sequelize');
+const path = require('path');
+const fs = require('fs');
 const sequelize = require('sequelize');
 
 module.exports = {
@@ -16,6 +18,17 @@ module.exports = {
         .setDescription('The winner of the fight')
         .setRequired(true)),
   async execute(interaction) {
+    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
+    // const configPath = path.join(process.resourcesPath, 'config.json');
+    let idConfig = JSON.parse(fs.readFileSync(configPath));
+
+    const member = interaction.guild.members.cache.get(interaction.user.id);
+    const adminRoleId = idConfig.ADMIN_ROLE_ID;
+
+    if (!member.roles.cache.has(adminRoleId)) {
+      return interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
+    }
+
     const fightId = interaction.options.getInteger('fight_id');
     const winner = interaction.options.getUser('winner');
     const winnerId = winner.id;
@@ -23,14 +36,14 @@ module.exports = {
     try {
       const fight = await Fight.findByPk(fightId);
       if (!fight) {
-        return interaction.reply('Fight not found.');
+        return interaction.reply({ content: 'Fight not found.', ephemeral: true });
       }
 
       const fighter1 = await Fighter.findByPk(fight.fighter1Id);
       const fighter2 = await Fighter.findByPk(fight.fighter2Id);
       
       if (!fighter1 || !fighter2) {
-        return interaction.reply('One or both fighters not found.');
+        return interaction.reply({ content: 'One or both fighters not found.', ephemeral: true });
       }
 
       let winnerFighter, loserFighter;
@@ -42,19 +55,11 @@ module.exports = {
         winnerFighter = fighter2;
         loserFighter = fighter1;
       } else {
-        return interaction.reply('Winner must be one of the fighters in the fight.');
+        return interaction.reply({ content: 'Winner must be one of the fighters in the fight.', ephemeral: true });
       }
 
       // Update the fight result
-      await fight.update({ result: winnerId, status: 'completed' });
-
-      // Add to previous fights
-      await PreviousFight.create({
-        fighter1Id: fight.fighter1Id,
-        fighter2Id: fight.fighter2Id,
-        winnerId: winnerId,
-        fightDate: new Date(),
-      });
+      await fight.update({ result: winnerId, status: 'completed', winnerId: winnerId, fightDate: new Date() });
 
       // Update win/loss records
       await winnerFighter.increment('wins');
@@ -65,9 +70,7 @@ module.exports = {
         const loserOriginalRank = loserFighter.rank;
 
         // Update the winner's rank to the loser's rank
-        console.log("Winner's previous rank:", winnerFighter.rank);
         await winnerFighter.update({ rank: loserOriginalRank });
-        console.log("Winner's new rank:", winnerFighter.rank, "Winner original rank:", winnerOriginalRank);
 
         // Shift down ranks of fighters between the loser's original rank and the winner's original rank
         await Fighter.update(
@@ -80,15 +83,15 @@ module.exports = {
             },
           }
         );
-
+        
         // Update the loser's rank
         await loserFighter.update({ rank: sequelize.literal('rank + 1') });
       }
 
-      await interaction.reply(`Fight ended. ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
+      await interaction.reply(`Fight decided! ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
     } catch (error) {
       console.error(error);
-      await interaction.reply('An error occurred while ending the fight.');
+      await interaction.reply({ content: 'An error occurred while ending the fight.', ephemeral: true });
     }
   },
 };

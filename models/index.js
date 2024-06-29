@@ -55,27 +55,11 @@ const Fight = sequelize.define('Fight', {
     type: DataTypes.STRING,
     defaultValue: 'pending',
   },
-});
-
-const PreviousFight = sequelize.define('PreviousFight', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true,
-  },
-  fighter1Id: DataTypes.STRING,
-  fighter2Id: DataTypes.STRING,
-  winnerId: DataTypes.STRING,
   fightDate: DataTypes.DATE,
+  winnerId: DataTypes.STRING,
 });
 
-const Admin = sequelize.define('Admin', {
-  id: {
-    type: DataTypes.STRING,
-    primaryKey: true,
-  },
-});
 
 sequelize.sync();
 
-module.exports = { sequelize, Fighter, Fight, PreviousFight, Admin };
+module.exports = { sequelize, Fighter, Fight };
