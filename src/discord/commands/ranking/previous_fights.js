@@ -20,7 +20,7 @@ module.exports = {
         previousFightsInfo += `Fight ID: ${fight.id} - ${fighter1.name} vs ${fighter2.name}, Winner: ${winner.name}, Date: ${fight.fightDate.toDateString()}\n`;
       }
 
-      interaction.reply(previousFightsInfo);
+      interaction.reply({ content: previousFightsInfo, ephemeral: true });
     } catch (error) {
       console.error(error);
       interaction.reply('An error occurred while fetching previous fights.');

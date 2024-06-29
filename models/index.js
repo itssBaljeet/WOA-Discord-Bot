@@ -25,6 +25,14 @@ const Fighter = sequelize.define('Fighter', {
     type: DataTypes.INTEGER,
     defaultValue: 0,
   },
+  hasSentChallenge: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  },
+  hasBeenChallenged: {
+    type: DataTypes.BOOLEAN,
+    defaultValue: false,
+  }
 }, {
   hooks: {
     beforeCreate: async (fighter) => {

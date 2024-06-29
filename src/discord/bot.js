@@ -1,4 +1,5 @@
 const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const { sequelize, Fighter, Fight, Admin } = require('../../models')
@@ -53,6 +54,17 @@ async function startBot() {
 
 client.once('ready', () => {
     console.log('Ready!');
+    cron.schedule('0 0 1 * *', async () => {
+      try {
+        await Fighter.update(
+          { hasSentChallenge: false, hasBeenChallenged: false },
+          { where: {} }
+        );
+        console.log('Successfully reset challenge statuses for all fighters.');
+      } catch (error) {
+        console.error('Error resetting challenge statuses:', error);
+      }
+    });
 });
 
 module.exports = { client, startBot }

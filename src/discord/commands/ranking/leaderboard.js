@@ -17,7 +17,7 @@ module.exports = {
         leaderboard += `${index + 1}. ${fighter.name} (Rank: ${fighter.rank}, Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
       });
 
-      interaction.reply(leaderboard);
+      interaction.reply({ content: leaderboard, ephemeral: true});
     } catch (error) {
       console.error(error);
       interaction.reply('An error occurred while fetching the leaderboard.');

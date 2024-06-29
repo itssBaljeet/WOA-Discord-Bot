@@ -19,7 +19,7 @@ module.exports = {
         scheduledFights += `Fight ID: ${fight.id} - ${fighter1.name} vs ${fighter2.name}\n`;
       }
 
-      interaction.reply(scheduledFights);
+      interaction.reply({ content: scheduledFights, ephemeral: true });
     } catch (error) {
       console.error(error);
       interaction.reply('An error occurred while fetching scheduled fights.');

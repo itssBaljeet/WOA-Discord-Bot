@@ -28,6 +28,14 @@ module.exports = {
         return interaction.reply('Both you and your opponent must be registered fighters.');
       }
 
+      if (challenger.hasSentChallenge) {
+        return interaction.reply('You have already sent a challenge this month.');
+      }
+
+      if (opponentFighter.hasBeenChallenged) {
+        return interaction.reply('The opponent has already been challenged this month.');
+      }
+
       if (challenger.rank === 1) {
         return interaction.reply('As the top-ranked fighter, you cannot challenge anyone.');
       }
@@ -39,6 +47,7 @@ module.exports = {
       if (opponentFighter.rank > challenger.rank) {
         return interaction.reply('You cannot challenge fighters that are lower ranks than you.');
       }
+
       const ongoingFight = await Fight.findOne({
         where: {
           [Op.or]: [
@@ -57,6 +66,10 @@ module.exports = {
 
       // Create the fight with status 'pending'
       const fight = await Fight.create({ fighter1Id: challengerId, fighter2Id: opponentId, status: 'pending' });
+
+      // Update the challenge status of the fighters
+      await challenger.update({ hasSentChallenge: true });
+      await opponentFighter.update({ hasBeenChallenged: true });
 
       const row = new ActionRowBuilder()
         .addComponents(
@@ -88,6 +101,9 @@ module.exports = {
         } else if (i.customId === 'deny_challenge') {
           // Delete the fight record if the challenge is denied
           await fight.destroy();
+          // Reset the challenge status
+          await challenger.update({ hasSentChallenge: false });
+          await opponentFighter.update({ hasBeenChallenged: false });
           await i.update({ content: `${opponent.username} has denied the challenge.`, components: [] });
           collector.stop();
         }
@@ -97,6 +113,9 @@ module.exports = {
         if (reason === 'time') {
           // Delete the fight record if the challenge expires
           await fight.destroy();
+          // Reset the challenge status
+          await challenger.update({ hasSentChallenge: false });
+          await opponentFighter.update({ hasBeenChallenged: false });
           await interaction.editReply({ content: 'Challenge expired.', components: [] });
         }
       });
