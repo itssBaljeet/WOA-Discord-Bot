@@ -1,6 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fighter, Fight } = require('../../../../models');
 const { Op } = require('sequelize');
+const path = require('path');
+const fs = require('fs');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -11,6 +13,21 @@ module.exports = {
         .setDescription('The fighter to fetch previous fights for')
         .setRequired(true)),
   async execute(interaction) {
+    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
+    // const configPath = path.join(process.resourcesPath, 'config.json');
+    let idConfig = JSON.parse(fs.readFileSync(configPath));
+
+    // Checks if correct channel
+    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channel = interaction.guild.channels.cache.get(channelId);
+    const channelName = channel ? channel.name : 'the correct channel';
+    if (interaction.channelId !== channelId) {
+      return interaction.reply({ 
+        content: `Please use this command in the correct channel: #${channelName}`, 
+        ephemeral: true 
+      });
+    }
+
     try {
       const fighter = interaction.options.getUser('fighter')
       const previousFights = await Fight.findAll({ 

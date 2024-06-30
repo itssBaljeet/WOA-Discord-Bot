@@ -25,6 +25,17 @@ module.exports = {
     const member = interaction.guild.members.cache.get(interaction.user.id);
     const adminRoleId = idConfig.ADMIN_ROLE_ID;
 
+    // Checks if correct channel
+    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channel = interaction.guild.channels.cache.get(channelId);
+    const channelName = channel ? channel.name : 'the correct channel';
+    if (interaction.channelId !== channelId) {
+      return interaction.reply({ 
+        content: `Please use this command in the correct channel: #${channelName}`, 
+        ephemeral: true 
+      });
+    }
+
     if (!member.roles.cache.has(adminRoleId)) {
       return interaction.reply({ content: 'You do not have permission to run this command.', ephemeral: true });
     }
@@ -59,7 +70,7 @@ module.exports = {
       }
 
       // Update the fight result
-      await fight.update({ result: winnerId, status: 'completed', winnerId: winnerId, fightDate: new Date() });
+      await fight.update({ status: 'completed', winnerId: winnerId, fightDate: new Date() });
 
       // Update win/loss records
       await winnerFighter.increment('wins');

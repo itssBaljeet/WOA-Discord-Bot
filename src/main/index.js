@@ -19,4 +19,3 @@ bot.client.on('ready', () => {
     }
   }
 })
-
