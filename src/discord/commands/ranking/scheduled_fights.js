@@ -38,11 +38,11 @@ module.exports = {
         const fighter2 = await Fighter.findByPk(fight.fighter2Id);
 
         if (!fighter1 || !fighter2) {
-          scheduledFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'}\n`;
+          scheduledFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'},Style: ${fight.combatStyle}\n`;
           continue;
         }
 
-        scheduledFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'}\n`;
+        scheduledFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'} Style: ${fight.combatStyle}\n`;
       }
 
       // Wrap the scheduled fights info in a code block

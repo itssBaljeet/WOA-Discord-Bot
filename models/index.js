@@ -57,6 +57,10 @@ const Fight = sequelize.define('Fight', {
   },
   fightDate: DataTypes.DATE,
   winnerId: DataTypes.STRING,
+  combatStyle: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  }
 });
 
 

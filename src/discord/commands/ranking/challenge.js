@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const { Fighter, Fight } = require('../../../../models');
 const { Op } = require('sequelize');
 const path = require('path');
@@ -100,10 +100,26 @@ module.exports = {
             .setStyle(ButtonStyle.Danger)
         );
 
-      const challengeMessage = await interaction.reply({ content: `${opponent}, you have been challenged by ${interaction.user.username}!`, components: [row], fetchReply: true });
+        const selectMenu = new StringSelectMenuBuilder()
+        .setCustomId('select_combat_style')
+        .setPlaceholder('Choose combat style!')
+        .addOptions([
+          { label: 'Close', value: 'close' },
+          { label: 'Medium', value: 'medium' },
+          { label: 'Long', value: 'long' },
+        ]);
 
-      const filter = i => i.customId === 'accept_challenge' || i.customId === 'deny_challenge';
-      const collector = challengeMessage.createMessageComponentCollector({ filter, time: 60000, componentType: ComponentType.Button });
+      const rowSelect = new ActionRowBuilder()
+        .addComponents(selectMenu);
+
+      const challengeMessage = await interaction.reply({ 
+        content: `${opponent}, you have been challenged by ${interaction.user.username}!`, 
+        components: [row, rowSelect], 
+        fetchReply: true 
+      });
+
+      const filter = i => i.customId === 'accept_challenge' || i.customId === 'deny_challenge' || i.customId === 'select_combat_style';
+      const collector = challengeMessage.createMessageComponentCollector({ filter, time: 60000 });
 
       collector.on('collect', async i => {
         if (i.user.id !== opponentId) {
@@ -123,6 +139,9 @@ module.exports = {
           await opponentFighter.update({ hasBeenChallenged: false });
           await i.update({ content: `${opponent.username} has denied the challenge.`, components: [] });
           collector.stop();
+        } else if (i.customId === 'select_combat_style') {
+          await fight.update({ combatStyle: i.values[0] });
+          await i.reply({ content: `Combat style set to ${i.values[0]}.`, ephemeral: true });
         }
       });
 

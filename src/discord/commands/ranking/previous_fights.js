@@ -51,11 +51,11 @@ module.exports = {
         const winner = await Fighter.findByPk(fight.winnerId);
 
         if (!fighter1 || !fighter2 || !winner) {
-          previousFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Date: ${fight.fightDate.toDateString()}\n`;
+          previousFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Date: ${fight.fightDate.toDateString()} Style: ${fight.combatStyle}\n`;
           continue;
         }
 
-        previousFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Winner: ${winner.name}, Date: ${fight.fightDate.toDateString()}\n`;
+        previousFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Winner: ${winner.name}, Date: ${fight.fightDate.toDateString()} Style: ${fight.combatStyle}\n`;
       }
 
       // Wrap the previous fights info in a code block
