@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fight, Fighter } = require('../../../../models');
 const path = require('path');
 const fs = require('fs');
+const logError = require('../../../../utils/logError');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -38,11 +39,11 @@ module.exports = {
         const fighter2 = await Fighter.findByPk(fight.fighter2Id);
 
         if (!fighter1 || !fighter2) {
-          scheduledFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'},Style: ${fight.combatStyle}\n`;
+          scheduledFightsInfo += `--Fight ID: ${fight.id}--\n One or more fighters not found, Style: ${fight.combatStyle}\n`;
           continue;
         }
 
-        scheduledFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Date: ${fight.fightDate ? fight.fightDate.toDateString() : 'Not scheduled yet'} Style: ${fight.combatStyle}\n`;
+        scheduledFightsInfo += `--Fight ID: ${fight.id}--\n ${fighter1.name} vs ${fighter2.name}, Style: ${fight.combatStyle}\n`;
       }
 
       // Wrap the scheduled fights info in a code block
@@ -51,6 +52,7 @@ module.exports = {
       interaction.reply({ content: scheduledFightsInfo, ephemeral: true });
     } catch (error) {
       console.error(error);
+      logError(error);
       interaction.reply('An error occurred while fetching scheduled fights.');
     }
   },

@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fighter } = require('../../../../models');
 const path = require('path');
 const fs = require('fs');
+const logError = require('../../../../utils/logError');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -36,6 +37,7 @@ module.exports = {
       interaction.reply(`You have been registered as a fighter, ${userName}!`);
     } catch (error) {
       console.error(error);
+      logError(error);
       interaction.reply('An error occurred while trying to register.');
     }
   },

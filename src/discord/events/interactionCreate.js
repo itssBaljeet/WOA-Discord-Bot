@@ -1,4 +1,5 @@
 const { Events } = require('discord.js');
+const logError = require('../../../utils/logError');
 
 module.exports = {
 	name: Events.InteractionCreate,
@@ -16,6 +17,7 @@ module.exports = {
 			await command.execute(interaction);
 		} catch (error) {
 			console.error(error);
+			logError(error);
 			if (interaction.replied || interaction.deferred) {
 				await interaction.followUp({ content: 'There was an error while executing this command!', ephemeral: true });
 			} else {

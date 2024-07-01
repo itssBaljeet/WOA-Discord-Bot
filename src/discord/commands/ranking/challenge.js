@@ -1,9 +1,10 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { ActionRowBuilder, StringSelectMenuBuilder, StringSelectMenuOptionBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
 const { Fighter, Fight } = require('../../../../models');
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
+const logError = require('../../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -88,6 +89,8 @@ module.exports = {
       await challenger.update({ hasSentChallenge: true });
       await opponentFighter.update({ hasBeenChallenged: true });
 
+      let combatStyleSelected = false;
+
       const row = new ActionRowBuilder()
         .addComponents(
           new ButtonBuilder()
@@ -100,7 +103,7 @@ module.exports = {
             .setStyle(ButtonStyle.Danger)
         );
 
-        const selectMenu = new StringSelectMenuBuilder()
+      const selectMenu = new StringSelectMenuBuilder()
         .setCustomId('select_combat_style')
         .setPlaceholder('Choose combat style!')
         .addOptions([
@@ -126,7 +129,16 @@ module.exports = {
           return i.reply({ content: 'You cannot respond to this challenge.', ephemeral: true });
         }
 
+        if (i.customId === 'select_combat_style') {
+          await fight.update({ combatStyle: i.values[0] });
+          combatStyleSelected = true;
+          await i.reply({ content: `Combat style set to ${i.values[0]}.`, ephemeral: true });
+        }
+
         if (i.customId === 'accept_challenge') {
+          if (!combatStyleSelected) {
+            return i.reply({ content: 'You must select a combat style before accepting the challenge.', ephemeral: true });
+          }
           // Update the fight status to 'accepted'
           await fight.update({ status: 'accepted' });
           await i.update({ content: `${interaction.user.username} and ${opponent.username} are now set to fight! Fight ID: ${fight.id}`, components: [] });
@@ -139,9 +151,6 @@ module.exports = {
           await opponentFighter.update({ hasBeenChallenged: false });
           await i.update({ content: `${opponent.username} has denied the challenge.`, components: [] });
           collector.stop();
-        } else if (i.customId === 'select_combat_style') {
-          await fight.update({ combatStyle: i.values[0] });
-          await i.reply({ content: `Combat style set to ${i.values[0]}.`, ephemeral: true });
         }
       });
 
@@ -157,6 +166,7 @@ module.exports = {
       });
     } catch (error) {
       console.error(error);
+      logError(error);
       interaction.reply('An error occurred while processing the challenge.');
     }
   },

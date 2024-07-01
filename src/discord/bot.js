@@ -3,11 +3,12 @@ const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
 const { sequelize, Fighter, Fight, Admin } = require('../../models')
+const logError = require('../../utils/logError');
 
 const configPath = path.join(__dirname, '../../extraResources/config.json');
-// const configPath = path.join(process.resourcesPath, 'config.json');
 let idConfig = JSON.parse(fs.readFileSync(configPath))
 
+// Client obj with intents
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
@@ -18,8 +19,10 @@ const client = new Client({
   ],
 });
 
+// Sync database
 sequelize.sync();
 
+// Load commands
 client.commands = new Collection();
 
 const foldersPath = path.join(__dirname, 'commands');
@@ -51,7 +54,7 @@ async function startBot() {
   }
 }
 
-
+// Start monthly removal job of challenge limit when ready
 client.once('ready', () => {
     console.log('Ready!');
     cron.schedule('0 0 1 * *', async () => {
@@ -65,6 +68,30 @@ client.once('ready', () => {
         console.error('Error resetting challenge statuses:', error);
       }
     });
+
+	// Backup database at the beginning of each month
+	cron.schedule('0 0 1 * *', () => {
+		const dbPath = path.join(__dirname, '../../db/database.sqlite'); // Adjust the path as necessary
+		const backupDir = path.join(__dirname, '../../db');
+		const backupFiles = fs.readdirSync(backupDir).filter(file => file.startsWith('backup-database-'));
+	
+		// Delete the oldest backup if there are more than 3 backups
+		if (backupFiles.length >= 3) {
+		  const oldestBackup = backupFiles.sort()[0];
+		  fs.unlinkSync(path.join(backupDir, oldestBackup));
+		  console.log('Deleted oldest backup:', oldestBackup);
+		}
+	
+		const backupPath = path.join(backupDir, `backup-database-${new Date().toISOString().split('T')[0]}.sqlite`);
+		fs.copyFile(dbPath, backupPath, (err) => {
+		  if (err) {
+			console.error('Error backing up database:', err);
+			logError(err);
+		  } else {
+			console.log('Database backup created successfully:', backupPath);
+		  }
+		});
+	});
 });
 
 module.exports = { client, startBot }

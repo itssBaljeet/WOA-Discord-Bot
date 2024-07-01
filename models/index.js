@@ -50,7 +50,6 @@ const Fight = sequelize.define('Fight', {
   },
   fighter1Id: DataTypes.STRING,
   fighter2Id: DataTypes.STRING,
-  result: DataTypes.STRING,
   status: {
     type: DataTypes.STRING,
     defaultValue: 'pending',

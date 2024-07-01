@@ -2,6 +2,7 @@ const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fighter } = require('../../../../models');
 const path = require('path');
 const fs = require('fs');
+const logError = require('../../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()

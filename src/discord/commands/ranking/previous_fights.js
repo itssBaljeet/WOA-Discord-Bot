@@ -3,6 +3,7 @@ const { Fighter, Fight } = require('../../../../models');
 const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
+const logError = require('../../../../utils/logError');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -64,6 +65,7 @@ module.exports = {
       interaction.reply({ content: previousFightsInfo, ephemeral: true });
     } catch (error) {
       console.error(error);
+      logError(error);
       interaction.reply({ content: 'An error occurred while fetching previous fights.', ephemeral: true});
     }
   },

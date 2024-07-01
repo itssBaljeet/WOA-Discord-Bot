@@ -1,25 +1,28 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { Fighter } = require('../../../../models');
 const { Op } = require('sequelize');
-const sequelize = require('sequelize');
 const path = require('path');
 const fs = require('fs');
 const logError = require('../../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName('delete_fighter')
-    .setDescription('Delete a fighter from the database')
+    .setName('set_rank')
+    .setDescription('Set the rank of a fighter')
     .addUserOption(option => 
       option.setName('fighter')
-        .setDescription('The user of the fighter to delete')
+        .setDescription('The fighter whose rank you want to change')
+        .setRequired(true))
+    .addIntegerOption(option => 
+      option.setName('rank')
+        .setDescription('The new rank for the fighter')
         .setRequired(true)),
   async execute(interaction) {
     const fighterUser = interaction.options.getUser('fighter');
+    const newRank = interaction.options.getInteger('rank');
     const fighterId = fighterUser.id;
 
     const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
     let idConfig = JSON.parse(fs.readFileSync(configPath));
 
     // Checks if correct channel
@@ -40,28 +43,22 @@ module.exports = {
         return interaction.reply({ content: 'Fighter not found.', ephemeral: true });
       }
 
-      const fighterRank = fighter.rank;
+      const currentRank = fighter.rank;
+      const targetFighter = await Fighter.findOne({ where: { rank: newRank } });
 
-      // Delete the fighter
-      await fighter.destroy();
+      if (!targetFighter) {
+        return interaction.reply({ content: 'No fighter found at the specified rank.', ephemeral: true });
+      }
 
-      // Shift ranks of fighters below the deleted fighter
-      await Fighter.update(
-        { rank: sequelize.literal('rank - 1') },
-        {
-          where: {
-            rank: {
-              [Op.gt]: fighterRank,
-            },
-          },
-        }
-      );
+      // Swap ranks
+      await fighter.update({ rank: newRank });
+      await targetFighter.update({ rank: currentRank });
 
-      interaction.reply(`Fighter ${fighter.name} (ID: ${fighterId}) has been deleted.`);
+      interaction.reply(`Set ${fighter.name} to rank ${newRank}, and ${targetFighter.name} to rank ${currentRank}.`);
     } catch (error) {
       console.error(error);
       logError(error);
-      interaction.reply({ content: 'An error occurred while deleting the fighter.', ephemeral: true });
+      interaction.reply({ content: 'An error occurred while setting the rank.', ephemeral: true });
     }
   },
 };

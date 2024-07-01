@@ -4,6 +4,7 @@ const { Op } = require('sequelize');
 const path = require('path');
 const fs = require('fs');
 const sequelize = require('sequelize');
+const logError = require('../../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -102,6 +103,7 @@ module.exports = {
       await interaction.reply(`Fight decided! ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
     } catch (error) {
       console.error(error);
+      logError(error)
       await interaction.reply({ content: 'An error occurred while ending the fight.', ephemeral: true });
     }
   },
