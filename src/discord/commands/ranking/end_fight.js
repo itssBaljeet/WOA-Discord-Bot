@@ -1,10 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fighter, Fight, PreviousFight } = require('../../../../models');
+const { Fighter, Fight } = require('../../../models/index.js');
 const { Op } = require('sequelize');
-const path = require('path');
-const fs = require('fs');
 const sequelize = require('sequelize');
-const logError = require('../../../../utils/logError.js');
+const logError = require('../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,15 +17,12 @@ module.exports = {
         .setDescription('The winner of the fight')
         .setRequired(true)),
   async execute(interaction) {
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
 
     const member = interaction.guild.members.cache.get(interaction.user.id);
-    const adminRoleId = idConfig.ADMIN_ROLE_ID;
+    const adminRoleId = process.env.ADMIN_ROLE_ID;
 
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -103,7 +98,7 @@ module.exports = {
       await interaction.reply(`Fight decided! ${winner.username} is the winner and is now ranked ${winnerFighter.rank}.`);
     } catch (error) {
       console.error(error);
-      logError(error)
+      logError(error, interaction.commandName, interaction.user.username);
       await interaction.reply({ content: 'An error occurred while ending the fight.', ephemeral: true });
     }
   },

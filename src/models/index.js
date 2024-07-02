@@ -4,15 +4,25 @@ const path = require('path');
 // Reference the database file
 const sequelize = new Sequelize({
   dialect: 'sqlite',
-  storage: path.join(__dirname, '../db', 'database.sqlite')
+  storage: path.join(__dirname, '../../db', 'database.sqlite')
 });
+
+const sanitizeUsername = (username) => {
+  return username.replace(/[*_~`]/g, '');
+};
+
 
 const Fighter = sequelize.define('Fighter', {
   id: {
     type: DataTypes.STRING,
     primaryKey: true,
   },
-  name: DataTypes.STRING,
+  name: {
+    type: DataTypes.STRING,
+    set(value) {
+      this.setDataValue('name', sanitizeUsername(value));
+    },
+  },
   rank: {
     type: DataTypes.INTEGER,
     defaultValue: 1,

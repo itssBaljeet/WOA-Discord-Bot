@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('discord.js');
-const logError = require('../../../../utils/logError');
+const logError = require('../../../utils/logError');
 
 module.exports = {
 	data: new SlashCommandBuilder()
@@ -10,8 +10,7 @@ module.exports = {
 			await interaction.reply('Pong!');
 		} catch (error) {
 			console.log(error);
-			logError(error);
+			logError(error, interaction.commandName, interaction.user.username);
 		}
-		
 	},
 };

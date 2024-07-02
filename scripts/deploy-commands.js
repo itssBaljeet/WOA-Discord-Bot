@@ -1,20 +1,10 @@
+const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../.env') })
 const { REST, Routes } = require('discord.js');
 const fs = require('fs');
-const path = require('path');
-
-// Load config
-const configPath = path.join(__dirname, '../extraResources/config.json');
-let idConfig;
-try {
-  idConfig = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-  console.log('Config loaded successfully');
-} catch (err) {
-  console.error('Error reading config file:', err);
-  process.exit(1);
-}
 
 // Ensure token and IDs are present
-if (!idConfig.DISCORD_TOKEN || !idConfig.CLIENT_ID || !idConfig.SERVER_ID) {
+if (!process.env.DISCORD_TOKEN || !process.env.CLIENT_ID || !process.env.SERVER_ID) {
   console.error('Missing required config values.');
   process.exit(1);
 }
@@ -59,14 +49,14 @@ for (const folder of commandFolders) {
 console.log(`Total commands loaded: ${commands.length}`);
 
 // Construct and prepare an instance of the REST module
-const rest = new REST().setToken(idConfig.DISCORD_TOKEN);
+const rest = new REST().setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
     console.log(`Started refreshing ${commands.length} application (/) commands.`);
 
     const data = await rest.put(
-      Routes.applicationGuildCommands(idConfig.CLIENT_ID, idConfig.SERVER_ID),
+      Routes.applicationGuildCommands(process.env.CLIENT_ID, process.env.SERVER_ID),
       { body: commands },
     );
 

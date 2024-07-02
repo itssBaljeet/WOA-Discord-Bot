@@ -1,7 +1,8 @@
-const bot = require('../discord/bot')
 const path = require('path')
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') })
+const bot = require('../discord/bot')
 const fs = require('fs')
-const logError = require('../../utils/logError');
+const logError = require('../utils/logError');
 
 try {
 	bot.startBot();
@@ -23,5 +24,5 @@ try {
 	})
 } catch (error) {
 	console.log('There was an error starting the bot: ', error);
-	logError(error);
+	logError(error, 'init bot at index.js');
 }

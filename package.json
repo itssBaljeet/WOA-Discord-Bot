@@ -4,7 +4,7 @@
   "description": "Ranking bot for HEMA school fights",
   "main": "index.js",
   "scripts": {
-    "test": "help"
+    "test": "jest"
   },
   "keywords": [
     "discord",
@@ -14,6 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "discord.js": "^14.15.3",
+    "dotenv": "^16.4.5",
     "node-cron": "^3.0.3",
     "sequelize": "^6.37.3",
     "sqlite3": "^5.1.7"
@@ -25,5 +26,11 @@
   "bugs": {
     "url": "https://github.com/itssBaljeet/WOA-Discord-Bot/issues"
   },
-  "homepage": "https://github.com/itssBaljeet/WOA-Discord-Bot#readme"
+  "homepage": "https://github.com/itssBaljeet/WOA-Discord-Bot#readme",
+  "devDependencies": {
+    "jest": "^29.7.0"
+  },
+  "jest": {
+  "setupFilesAfterEnv": ["<rootDir>/jest.setup.js"]
+  }
 }

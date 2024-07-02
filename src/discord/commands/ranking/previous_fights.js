@@ -1,9 +1,7 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fighter, Fight } = require('../../../../models');
+const { Fighter, Fight } = require('../../../models');
 const { Op } = require('sequelize');
-const path = require('path');
-const fs = require('fs');
-const logError = require('../../../../utils/logError');
+const logError = require('../../../utils/logError');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -14,12 +12,9 @@ module.exports = {
         .setDescription('The fighter to fetch previous fights for')
         .setRequired(true)),
   async execute(interaction) {
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
 
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -65,7 +60,7 @@ module.exports = {
       interaction.reply({ content: previousFightsInfo, ephemeral: true });
     } catch (error) {
       console.error(error);
-      logError(error);
+      logError(error, interaction.commandName, interaction.user.username);
       interaction.reply({ content: 'An error occurred while fetching previous fights.', ephemeral: true});
     }
   },

@@ -1,9 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fighter } = require('../../../../models');
-const { Op } = require('sequelize');
-const path = require('path');
-const fs = require('fs');
-const logError = require('../../../../utils/logError.js');
+const { Fighter } = require('../../../models/index.js');
+const logError = require('../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,11 +19,8 @@ module.exports = {
     const newRank = interaction.options.getInteger('rank');
     const fighterId = fighterUser.id;
 
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
-
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -57,7 +51,7 @@ module.exports = {
       interaction.reply(`Set ${fighter.name} to rank ${newRank}, and ${targetFighter.name} to rank ${currentRank}.`);
     } catch (error) {
       console.error(error);
-      logError(error);
+      logError(error, interaction.commandName, interaction.user.username);
       interaction.reply({ content: 'An error occurred while setting the rank.', ephemeral: true });
     }
   },

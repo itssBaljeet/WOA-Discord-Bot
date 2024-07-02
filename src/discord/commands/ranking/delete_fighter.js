@@ -1,10 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fighter } = require('../../../../models');
+const { Fighter } = require('../../../models/index.js');
 const { Op } = require('sequelize');
 const sequelize = require('sequelize');
-const path = require('path');
-const fs = require('fs');
-const logError = require('../../../../utils/logError.js');
+const logError = require('../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -18,12 +16,8 @@ module.exports = {
     const fighterUser = interaction.options.getUser('fighter');
     const fighterId = fighterUser.id;
 
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
-
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -36,8 +30,16 @@ module.exports = {
     try {
       const fighter = await Fighter.findByPk(fighterId);
 
+      // Check if fighter exists
       if (!fighter) {
         return interaction.reply({ content: 'Fighter not found.', ephemeral: true });
+      }
+
+      // Checks if user is admin
+      const isAdmin = interaction.member.roles.cache.has(process.env.ADMIN_ROLE_ID);
+
+      if (!isAdmin && !fighter) {
+        return interaction.reply({ content: 'You do not have permission to cancel this fight.', ephemeral: true });
       }
 
       const fighterRank = fighter.rank;
@@ -60,7 +62,7 @@ module.exports = {
       interaction.reply(`Fighter ${fighter.name} (ID: ${fighterId}) has been deleted.`);
     } catch (error) {
       console.error(error);
-      logError(error);
+      logError(error, interaction.commandName, interaction.user.username);
       interaction.reply({ content: 'An error occurred while deleting the fighter.', ephemeral: true });
     }
   },

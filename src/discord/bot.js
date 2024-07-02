@@ -2,11 +2,8 @@ const { Client, Collection, GatewayIntentBits } = require('discord.js');
 const cron = require('node-cron');
 const fs = require('fs');
 const path = require('path');
-const { sequelize, Fighter, Fight, Admin } = require('../../models')
-const logError = require('../../utils/logError');
-
-const configPath = path.join(__dirname, '../../extraResources/config.json');
-let idConfig = JSON.parse(fs.readFileSync(configPath))
+const { sequelize, Fighter, Fight, Admin } = require('../models')
+const logError = require('../utils/logError');
 
 // Client obj with intents
 const client = new Client({
@@ -47,9 +44,10 @@ for (const folder of commandFolders) {
 
 async function startBot() {
   try {
-    await client.login(idConfig.DISCORD_TOKEN)
+    await client.login(process.env.DISCORD_TOKEN)
     console.log(`Logged in successfully as ${client.user.tag}!`)
   } catch(error) {
+    logError(error, 'startBot Function');
     console.log("Error logging in: ", error)
   }
 }
@@ -65,6 +63,7 @@ client.once('ready', () => {
         );
         console.log('Successfully reset challenge statuses for all fighters.');
       } catch (error) {
+        logError(error, 'Cron job challenge reset');
         console.error('Error resetting challenge statuses:', error);
       }
     });
@@ -86,7 +85,7 @@ client.once('ready', () => {
 		fs.copyFile(dbPath, backupPath, (err) => {
 		  if (err) {
 			console.error('Error backing up database:', err);
-			logError(err);
+			logError(err, 'Cron job backup');
 		  } else {
 			console.log('Database backup created successfully:', backupPath);
 		  }

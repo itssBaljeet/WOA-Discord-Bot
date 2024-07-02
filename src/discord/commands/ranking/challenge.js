@@ -1,10 +1,8 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
 const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
-const { Fighter, Fight } = require('../../../../models');
+const { Fighter, Fight } = require('../../../models/index.js');
 const { Op } = require('sequelize');
-const path = require('path');
-const fs = require('fs');
-const logError = require('../../../../utils/logError.js');
+const logError = require('../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -19,12 +17,8 @@ module.exports = {
     const opponent = interaction.options.getUser('opponent');
     const opponentId = opponent.id;
 
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
-
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -136,16 +130,20 @@ module.exports = {
         }
 
         if (i.customId === 'accept_challenge') {
+
           if (!combatStyleSelected) {
             return i.reply({ content: 'You must select a combat style before accepting the challenge.', ephemeral: true });
           }
+
           // Update the fight status to 'accepted'
           await fight.update({ status: 'accepted' });
           await i.update({ content: `${interaction.user.username} and ${opponent.username} are now set to fight! Fight ID: ${fight.id}`, components: [] });
           collector.stop();
+
         } else if (i.customId === 'deny_challenge') {
           // Delete the fight record if the challenge is denied
           await fight.destroy();
+
           // Reset the challenge status
           await challenger.update({ hasSentChallenge: false });
           await opponentFighter.update({ hasBeenChallenged: false });
@@ -166,7 +164,7 @@ module.exports = {
       });
     } catch (error) {
       console.error(error);
-      logError(error);
+      logError(error, interaction.commandName, interaction.user.username);
       interaction.reply('An error occurred while processing the challenge.');
     }
   },

@@ -1,8 +1,6 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { Fighter, Fight, Admin } = require('../../../../models');
-const path = require('path');
-const fs = require('fs');
-const logError = require('../../../../utils/logError.js');
+const { Fighter, Fight } = require('../../../models/index.js');
+const logError = require('../../../utils/logError.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -16,12 +14,8 @@ module.exports = {
     const fightId = interaction.options.getInteger('fightid');
     const userId = interaction.user.id;
 
-    const configPath = path.join(__dirname, '../../../../extraResources/config.json');
-    // const configPath = path.join(process.resourcesPath, 'config.json');
-    let idConfig = JSON.parse(fs.readFileSync(configPath));
-
     // Checks if correct channel
-    const channelId = idConfig.MAIN_TEXT_CHANNEL_ID;
+    const channelId = process.env.MAIN_TEXT_CHANNEL_ID;
     const channel = interaction.guild.channels.cache.get(channelId);
     const channelName = channel ? channel.name : 'the correct channel';
     if (interaction.channelId !== channelId) {
@@ -32,23 +26,20 @@ module.exports = {
     }
 
     try {
-
       const fight = await Fight.findByPk(fightId);
       if (!fight) {
-        return interaction.reply('The fight does not exist.');
+        return interaction.reply({ content: 'The fight does not exist.', ephemeral: true });
       }
-
-      const fighter = await Fighter.findByPk(userId);
       
-      if (!fighter) {
-        return interaction.reply('You are not a participant of this fight.');
-      }
-      // Checks if user is admin
-      const isAdmin = interaction.member.roles.cache.has(idConfig.ADMIN_ROLE_ID);
+      // Check if the user is an admin or a participant in the fight
+      const isAdmin = interaction.member.roles.cache.has(process.env.ADMIN_ROLE_ID);
+      const isParticipant = fight.fighter1Id === userId || fight.fighter2Id === userId;
 
-      if (!isAdmin && !fighter) {
+      if (!isAdmin && !isParticipant) {
         return interaction.reply({ content: 'You do not have permission to cancel this fight.', ephemeral: true });
       }
+
+      console.log('Resetting challenge statuses for fighters:', fight.fighter1Id, fight.fighter2Id);
 
       // Reset the fighters' challenge statuses
       await Fighter.update(
@@ -61,12 +52,15 @@ module.exports = {
         { where: { id: fight.fighter2Id } }
       );
 
+      console.log('Updating fight status to cancelled:', fightId);
+
       await Fight.update({ winnerId: 'none', status: 'cancelled'}, {where: { id: fightId } });
       interaction.reply(`Fight ID ${fightId} has been cancelled.`);
+      
     } catch (error) {
       console.error(error);
-      logError(error);
-      interaction.reply('An error occurred while trying to cancel the fight.');
+      logError(error, interaction.commandName, interaction.user.username);
+      interaction.reply({ content: 'An error occurred while trying to cancel the fight.', ephemeral: true });
     }
   },
 };
