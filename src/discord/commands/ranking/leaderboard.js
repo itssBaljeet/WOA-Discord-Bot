@@ -32,7 +32,7 @@ module.exports = {
       let leaderboard = 'Leaderboard:\n';
       fighters.forEach((fighter, index) => {
         const paddedName = fighter.name.padEnd(maxLength + 3);
-        leaderboard += `${(index + 1).toString().padStart(2)}. ${paddedName} (Rank: ${fighter.rank}, Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
+        leaderboard += `${(index + 1).toString().padStart(2)}. ${paddedName} (Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
       });
 
       // Wrap the leaderboard in a code block to use a monospaced font

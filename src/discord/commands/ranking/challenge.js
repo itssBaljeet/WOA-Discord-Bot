@@ -116,7 +116,7 @@ module.exports = {
       });
 
       const filter = i => i.customId === 'accept_challenge' || i.customId === 'deny_challenge' || i.customId === 'select_combat_style';
-      const collector = challengeMessage.createMessageComponentCollector({ filter, time: 60000 });
+      const collector = challengeMessage.createMessageComponentCollector({ filter, time: 10800000  }); // Collects for three hours total before time out
 
       collector.on('collect', async i => {
         if (i.user.id !== opponentId) {

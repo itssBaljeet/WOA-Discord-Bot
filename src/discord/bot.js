@@ -47,7 +47,7 @@ async function startBot() {
     await client.login(process.env.DISCORD_TOKEN)
     console.log(`Logged in successfully as ${client.user.tag}!`)
   } catch(error) {
-    logError(error, 'startBot Function');
+    logError(error, 'startBot Function', 'n/a');
     console.log("Error logging in: ", error)
   }
 }
@@ -63,7 +63,7 @@ client.once('ready', () => {
         );
         console.log('Successfully reset challenge statuses for all fighters.');
       } catch (error) {
-        logError(error, 'Cron job challenge reset');
+        logError(error, 'Cron job challenge reset', 'n/a');
         console.error('Error resetting challenge statuses:', error);
       }
     });
@@ -85,7 +85,7 @@ client.once('ready', () => {
 		fs.copyFile(dbPath, backupPath, (err) => {
 		  if (err) {
 			console.error('Error backing up database:', err);
-			logError(err, 'Cron job backup');
+			logError(err, 'Cron job backup', 'n/a');
 		  } else {
 			console.log('Database backup created successfully:', backupPath);
 		  }
