@@ -26,13 +26,24 @@ module.exports = {
         return interaction.reply({ content: 'No fighters registered yet.', ephemeral: true });
       }
 
-      // Find the length of the longest username
-      const maxLength = fighters.reduce((max, fighter) => Math.max(max, fighter.name.length), 0);
+      // Fetch the display names from Discord API
+      const fightersWithDisplayName = await Promise.all(fighters.map(async fighter => {
+        try {
+          const member = await interaction.guild.members.fetch(fighter.id);
+          return { ...fighter.toJSON(), displayName: member.displayName };
+        } catch (fetchError) {
+          console.error(`Failed to fetch user with ID ${fighter.id}:`, fetchError);
+          return { ...fighter.toJSON(), displayName: fighter.name }; // Fallback to name if user fetch fails
+        }
+      }));
+
+      // Find the length of the longest display name
+      const maxLength = fightersWithDisplayName.reduce((max, fighter) => Math.max(max, fighter.displayName.length), 0);
 
       let leaderboard = 'Leaderboard:\n';
-      fighters.forEach((fighter, index) => {
-        const paddedName = fighter.name.padEnd(maxLength + 3);
-        leaderboard += `${(index + 1).toString().padStart(2)}. ${paddedName} (Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
+      fightersWithDisplayName.forEach((fighter, index) => {
+        const paddedDisplayName = fighter.displayName.padEnd(maxLength + 3);
+        leaderboard += `${(index + 1).toString().padStart(2)}. ${paddedDisplayName} (Wins: ${fighter.wins}, Losses: ${fighter.losses})\n`;
       });
 
       // Wrap the leaderboard in a code block to use a monospaced font
@@ -42,7 +53,7 @@ module.exports = {
     } catch (error) {
       console.error(error);
       logError(error, interaction.commandName, interaction.user.username);
-      interaction.reply({ content: 'An error occurred while fetching the leaderboard.', ephemeral: true});
+      interaction.reply({ content: 'An error occurred while fetching the leaderboard.', ephemeral: true });
     }
   },
 };
