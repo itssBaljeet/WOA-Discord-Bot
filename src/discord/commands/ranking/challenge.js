@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require('@discordjs/builders');
-const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle, ComponentType } = require('discord.js');
+const { ActionRowBuilder, StringSelectMenuBuilder, ButtonBuilder, ButtonStyle } = require('discord.js');
 const { Fighter, Fight } = require('../../../models/index.js');
 const { Op } = require('sequelize');
 const logError = require('../../../utils/logError.js');
@@ -84,6 +84,8 @@ module.exports = {
       await opponentFighter.update({ hasBeenChallenged: true });
 
       let combatStyleSelected = false;
+      let currentCombatStyle = 'Not selected yet';
+      let pingedChallenger = false;
 
       const row = new ActionRowBuilder()
         .addComponents(
@@ -110,7 +112,7 @@ module.exports = {
         .addComponents(selectMenu);
 
       const challengeMessage = await interaction.reply({ 
-        content: `${opponent}, you have been challenged by ${interaction.user.username}!`, 
+        content: `${opponent}, you have been challenged by ${interaction.user.username}!\nCurrent Combat Style: ${currentCombatStyle}`, 
         components: [row, rowSelect], 
         fetchReply: true 
       });
@@ -119,20 +121,31 @@ module.exports = {
       const collector = challengeMessage.createMessageComponentCollector({ filter, time: 10800000  }); // Collects for three hours total before time out
 
       collector.on('collect', async i => {
-        if (i.user.id !== opponentId) {
-          return i.reply({ content: 'You cannot respond to this challenge.', ephemeral: true });
-        }
-
         if (i.customId === 'select_combat_style') {
-          await fight.update({ combatStyle: i.values[0] });
+          if (i.user.id !== challengerId) {
+            return i.reply({ content: 'Only the challenger can select the combat style.', ephemeral: true });
+          }
+          currentCombatStyle = i.values[0];
+          await fight.update({ combatStyle: currentCombatStyle });
           combatStyleSelected = true;
-          await i.reply({ content: `Combat style set to ${i.values[0]}.`, ephemeral: true });
+          await i.deferUpdate();
+
+          // Update the message to reflect the current combat style
+          await interaction.editReply({ content: `${opponent}, you have been challenged by ${interaction.user.username}!\nCurrent Combat Style: ${currentCombatStyle}`, components: [row, rowSelect] });
         }
 
         if (i.customId === 'accept_challenge') {
-
+          if (i.user.id !== opponentId) {
+            return i.reply({ content: 'You cannot respond to this challenge.', ephemeral: true });
+          }
           if (!combatStyleSelected) {
-            return i.reply({ content: 'You must select a combat style before accepting the challenge.', ephemeral: true });
+            if (!pingedChallenger) {
+              await i.reply(`${interaction.user}, you must select a combat style before your challenge can be accepted.`);
+              pingedChallenger = true;
+            } else {
+              await i.deferUpdate();
+            }
+            return;
           }
 
           // Update the fight status to 'accepted'
@@ -141,6 +154,9 @@ module.exports = {
           collector.stop();
 
         } else if (i.customId === 'deny_challenge') {
+          if (i.user.id !== opponentId) {
+            return i.reply({ content: 'You cannot respond to this challenge.', ephemeral: true });
+          }
           // Delete the fight record if the challenge is denied
           await fight.destroy();
 
@@ -159,13 +175,22 @@ module.exports = {
           // Reset the challenge status
           await challenger.update({ hasSentChallenge: false });
           await opponentFighter.update({ hasBeenChallenged: false });
-          await interaction.editReply({ content: 'Challenge expired.', components: [] });
+          try {
+            await interaction.editReply({ content: 'Challenge expired.', components: [] });
+          } catch (error) {
+            logError(error, interaction.commandName, interaction.user.username);
+            console.error('Failed to edit reply:', error);
+          }
         }
       });
     } catch (error) {
       console.error(error);
       logError(error, interaction.commandName, interaction.user.username);
-      interaction.reply('An error occurred while processing the challenge.');
+      try {
+        await interaction.reply({ content: 'An error occurred while processing the challenge.', ephemeral: true });
+      } catch (replyError) {
+        console.error('Failed to send error reply:', replyError);
+      }
     }
   },
 };
