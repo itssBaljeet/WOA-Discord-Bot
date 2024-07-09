@@ -26,7 +26,7 @@ module.exports = {
       });
 
       if (fights.length === 0) {
-        return interaction.reply('No fights are currently scheduled.');
+        return interaction.reply({ content: 'No fights are currently scheduled.', ephemeral: true});
       }
 
       let scheduledFightsInfo = 'Scheduled Fights:\n';
