@@ -176,10 +176,11 @@ module.exports = {
           await challenger.update({ hasSentChallenge: false });
           await opponentFighter.update({ hasBeenChallenged: false });
           try {
-            await interaction.editReply({ content: 'Challenge expired.', components: [] });
+            const message = await interaction.channel.messages.fetch(challengeMessage.id);
+            await message.edit({ content: 'Challenge expired.', components: [] });
           } catch (error) {
             logError(error, interaction.commandName, interaction.user.username);
-            console.error('Failed to edit reply:', error);
+            console.error('Failed to edit message:', error);
           }
         }
       });
